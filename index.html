@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hooke's Law & Elasticity — 3D Virtual Physics Lab | ಹುಕ್‌ನ ನಿಯಮ</title>
+
+  <!-- Fonts: Orbitron (Sci-Fi HUD), Inter (UI), Noto Sans Kannada (Bilingual Kannada) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Main 3D WebGL Laboratory Canvas -->
+  <div id="canvas-container" aria-label="3D Physics Laboratory Scene"></div>
+
+  <!-- Vignette & Subtle Scanline Atmospheric Overlay -->
+  <div class="hud-atmosphere" aria-hidden="true"></div>
+
+  <!-- Top Observatory Header Bar -->
+  <header class="hud-header glass-panel">
+    <div class="brand-block">
+      <div class="brand-beacon">
+        <span class="beacon-ring"></span>
+        <span class="beacon-core"></span>
+      </div>
+      <div class="brand-text">
+        <div class="brand-kicker">8TH GRADE PHYSICS LAB • ೮ನೇ ತರಗತಿ ಭೌತಶಾಸ್ತ್ರ ಪ್ರಯೋಗಾಲಯ</div>
+        <h1 class="brand-title">
+          Elasticity &amp; Hooke's Law
+          <span class="kn-inline">ಸ್ಥಿತಿಸ್ಥಾಪಕತ್ವ ಮತ್ತು ಹುಕ್‌ನ ನಿಯಮ</span>
+        </h1>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="camera-presets" role="group" aria-label="Camera Presets">
+        <button class="pill-btn active" data-cam="overview" title="Lab Overview">
+          <span class="en">Overview</span>
+          <span class="kn">ಸಂಪೂರ್ಣ ನೋಟ</span>
+        </button>
+        <button class="pill-btn" data-cam="ruler" title="Focus on Rubber Band & Ruler">
+          <span class="en">Scale Focus</span>
+          <span class="kn">ಸ್ಕೇಲ್ ನೋಟ</span>
+        </button>
+        <button class="pill-btn" data-cam="cup" title="Inspect Cup & Paperclips">
+          <span class="en">Cup View</span>
+          <span class="kn">ಕಪ್ ನೋಟ</span>
+        </button>
+      </div>
+
+      <button id="btn-sound" class="icon-pill-btn active" title="Toggle Sound Effects / ಶಬ್ದ">
+        <svg viewBox="0 0 24 24" class="icon-svg" aria-hidden="true">
+          <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/>
+          <path id="sound-wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path id="sound-wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="en">SFX</span>
+      </button>
+
+      <button id="btn-toggle-hud" class="icon-pill-btn mobile-only" title="Toggle HUD Panels">
+        <span>HUD</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Elastic Limit Snap Alert Banner -->
+  <div id="snap-banner" class="snap-banner hidden" role="alert">
+    <div class="snap-banner-icon">⚠</div>
+    <div class="snap-banner-text">
+      <strong>ELASTIC LIMIT EXCEEDED — RUBBER BAND SNAPPED!</strong>
+      <span class="kn-block">ಸ್ಥಿತಿಸ್ಥಾಪಕ ಮಿತಿ ಮೀರಿದೆ — ರಬ್ಬರ್ ಬ್ಯಾಂಡ್ ತುಂಡಾಗಿದೆ!</span>
+    </div>
+    <button id="btn-banner-repair" class="repair-btn">
+      <span>Repair Band</span>
+      <span class="kn-sub">ಸರಿಪಡಿಸಿ</span>
+    </button>
+  </div>
+
+  <!-- Left HUD Panel: Live Telemetry & Floating 3D Graph -->
+  <aside id="left-panel" class="hud-panel hud-left glass-panel">
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <span class="panel-dot"></span>
+        <div>
+          <h2 class="panel-title">LIVE TELEMETRY</h2>
+          <div class="panel-subtitle-kn">ನೇರ ಪ್ರಯೋಗ ದತ್ತಾಂಶ</div>
+        </div>
+      </div>
+      <span id="status-badge" class="status-badge state-normal">LINEAR • ರೇಖೀಯ</span>
+    </div>
+
+    <!-- Primary Metrics Grid -->
+    <div class="telemetry-grid">
+      <div class="metric-card">
+        <div class="metric-label">
+          <span>Current Weight (g)</span>
+          <span class="kn-label">ಪ್ರಸ್ತುತ ತೂಕ (g)</span>
+        </div>
+        <div class="metric-value-row">
+          <span id="val-weight" class="metric-value">0.0</span>
+          <span class="metric-unit">g</span>
+        </div>
+        <div class="metric-sub" id="val-force">Force (ಬಲ): 0.000 N</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">
+          <span>Number of Paperclips</span>
+          <span class="kn-label">ಪೇಪರ್‌ಕ್ಲಿಪ್‌ಗಳ ಸಂಖ್ಯೆ</span>
+        </div>
+        <div class="metric-value-row">
+          <span id="val-clips" class="metric-value">0</span>
+          <span class="metric-unit">/ 8 max</span>
+        </div>
+        <div class="clip-meter" id="clip-meter" aria-label="Elastic capacity gauge">
+          <!-- 8 safe slots + 1 snap slot rendered cleanly -->
+          <span class="meter-seg"></span><span class="meter-seg"></span>
+          <span class="meter-seg"></span><span class="meter-seg"></span>
+          <span class="meter-seg"></span><span class="meter-seg"></span>
+          <span class="meter-seg"></span><span class="meter-seg"></span>
+          <span class="meter-seg seg-danger" title="Elastic Limit Exceeded (>8)"></span>
+        </div>
+      </div>
+
+      <div class="metric-card metric-wide">
+        <div class="metric-wide-left">
+          <div class="metric-label">
+            <span>Rubber Band Extension (cm)</span>
+            <span class="kn-label">ರಬ್ಬರ್ ಬ್ಯಾಂಡ್ ಹಿಗ್ಗುವಿಕೆ (cm)</span>
+          </div>
+          <div class="metric-sub" id="val-law-ratio">Hooke's Law: F = k · Δx &nbsp;|&nbsp; k = 3.27 N/m</div>
+        </div>
+        <div class="metric-value-row">
+          <span id="val-extension" class="metric-value glow-cyan">0.00</span>
+          <span class="metric-unit">cm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Floating 3D Line Graph Section -->
+    <div class="graph-section">
+      <div class="graph-header">
+        <div>
+          <h3 class="graph-title">3D FORCE vs. EXTENSION GRAPH</h3>
+          <div class="kn-label">ಬಲ (N) vs ಹಿಗ್ಗುವಿಕೆ (cm) — 3D ರೇಖಾ ನಕ್ಷೆ</div>
+        </div>
+        <div class="graph-legend">
+          <span class="legend-chip"><i class="dot-cyan"></i> Hooke Line</span>
+          <span class="legend-chip"><i class="dot-amber"></i> Limit (8)</span>
+        </div>
+      </div>
+
+      <div id="graph-3d-wrap" class="graph-3d-wrap">
+        <canvas id="graph-canvas"></canvas>
+        <!-- Crisp Bilingual Holographic Axis Overlays -->
+        <div class="graph-axis-y">Force F (N) • ಬಲ</div>
+        <div class="graph-axis-x">Extension Δx (cm) • ಹಿಗ್ಗುವಿಕೆ</div>
+        <div id="graph-readout" class="graph-readout">Origin: (0.0 cm, 0.000 N)</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right HUD Panel: Interactive Controls & Challenge Mode -->
+  <aside id="right-panel" class="hud-panel hud-right glass-panel">
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <span class="panel-dot dot-purple"></span>
+        <div>
+          <h2 class="panel-title">LAB CONTROLS</h2>
+          <div class="panel-subtitle-kn">ಪ್ರಯೋಗ ನಿಯಂತ್ರಣಗಳು</div>
+        </div>
+      </div>
+      <span id="lock-badge" class="lock-badge hidden">LOCKED 🔒</span>
+    </div>
+
+    <div id="controls-body" class="controls-body">
+      <!-- Primary Action: Add Paperclip -->
+      <button id="btn-add-clip" class="hero-cta-btn">
+        <span class="cta-glow"></span>
+        <span class="cta-content">
+          <span class="cta-icon">📎</span>
+          <span class="cta-labels">
+            <span class="cta-main">Add Paperclip (ಕ್ಲಿಪ್ ಸೇರಿಸಿ)</span>
+            <span class="cta-sub">+5.0 g mass • +0.049 N • +1.5 cm stretch</span>
+          </span>
+        </span>
+      </button>
+
+      <!-- Secondary Controls -->
+      <div class="secondary-actions">
+        <button id="btn-remove-clip" class="sec-btn" disabled>
+          <span class="sec-main">Remove Clip</span>
+          <span class="sec-kn">ಕ್ಲಿಪ್ ತೆಗೆಯಿರಿ</span>
+        </button>
+        <button id="btn-reset-lab" class="sec-btn sec-reset">
+          <span class="sec-main">Reset Lab</span>
+          <span class="sec-kn">ಮರುಹೊಂದಿಸಿ</span>
+        </button>
+      </div>
+
+      <!-- Physics Law Reference Card -->
+      <div class="physics-card">
+        <div class="physics-card-top">
+          <span class="formula-pill">F = k · Δx</span>
+          <span class="limit-pill">Limit: 8 Clips (40 g)</span>
+        </div>
+        <p class="physics-note">
+          Within the elastic limit, extension (Δx) increases linearly with load. Adding <strong>&gt; 8 clips</strong> exceeds the elastic limit and snaps the band!
+        </p>
+        <p class="physics-note kn-note">
+          ಸ್ಥಿತಿಸ್ಥಾಪಕ ಮಿತಿಯೊಳಗೆ ಹಿಗ್ಗುವಿಕೆಯು ತೂಕಕ್ಕೆ ನೇರ ಅನುಪಾತದಲ್ಲಿರುತ್ತದೆ. <strong>8 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಕ್ಲಿಪ್‌ಗಳನ್ನು</strong> ಹಾಕಿದರೆ ಬ್ಯಾಂಡ್ ತುಂಡಾಗುತ್ತದೆ!
+        </p>
+      </div>
+
+      <!-- Simulation Options -->
+      <div class="toggles-row">
+        <label class="toggle-chip">
+          <input type="checkbox" id="chk-slowmo" />
+          <span class="toggle-ui"></span>
+          <span class="toggle-text">
+            <span>Slow Motion</span>
+            <span class="kn-tiny">ನಿಧಾನ ಗತಿ</span>
+          </span>
+        </label>
+        <label class="toggle-chip">
+          <input type="checkbox" id="chk-laser" checked />
+          <span class="toggle-ui"></span>
+          <span class="toggle-text">
+            <span>Laser Guide</span>
+            <span class="kn-tiny">ಲೇಸರ್ ಮಾರ್ಗದರ್ಶಿ</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Challenge Mode Launcher -->
+    <div class="challenge-launcher">
+      <button id="btn-challenge" class="challenge-btn">
+        <span class="chal-badge">QUIZ • ಪರೀಕ್ಷೆ</span>
+        <span class="chal-title">Challenge Mode (ಸವಾಲು ಮೋಡ್)</span>
+        <span class="chal-sub">Locks controls &amp; opens holographic physics quiz</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Bottom Orbit Hint -->
+  <div class="orbit-hint glass-pill">
+    <span>🖱️ Drag to Orbit 360° • Scroll to Zoom • Right-Drag to Pan</span>
+    <span class="kn-hint">ತಿರುಗಿಸಲು ಎಳೆಯಿರಿ • ಜೂಮ್ ಮಾಡಲು ಸ್ಕ್ರಾಲ್ ಮಾಡಿ</span>
+  </div>
+
+  <!-- Holographic Challenge Mode Pop-Up Quiz Modal -->
+  <div id="challenge-modal" class="holo-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
+    <div class="holo-modal glass-panel">
+      <div class="holo-scanline" aria-hidden="true"></div>
+
+      <div class="modal-header">
+        <div>
+          <div class="modal-kicker">HOLOGRAPHIC PHYSICS CHALLENGE • ಭೌತಶಾಸ್ತ್ರ ಸವಾಲು</div>
+          <h2 id="quiz-title" class="modal-title">Hooke's Law Assessment</h2>
+        </div>
+        <div class="modal-meta">
+          <span id="quiz-progress" class="quiz-pill">Q 1 / 5</span>
+          <span id="quiz-score" class="quiz-pill score-pill">Score: 0</span>
+          <button id="btn-close-challenge" class="close-modal-btn" title="Unlock Controls & Exit">✕</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="question-box">
+          <p id="quiz-q-en" class="q-en"></p>
+          <p id="quiz-q-kn" class="q-kn"></p>
+        </div>
+
+        <div id="quiz-options" class="quiz-options"></div>
+
+        <div id="quiz-feedback" class="quiz-feedback hidden">
+          <div id="quiz-fb-title" class="fb-title"></div>
+          <p id="quiz-fb-en" class="fb-en"></p>
+          <p id="quiz-fb-kn" class="fb-kn"></p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="locked-notice">
+          🔒 Lab controls are locked during Challenge Mode • ಪ್ರಯೋಗ ನಿಯಂತ್ರಣಗಳು ಲಾಕ್ ಆಗಿವೆ
+        </div>
+        <div class="modal-nav-btns">
+          <button id="btn-quiz-next" class="next-btn hidden">
+            <span>Next Question</span>
+            <span class="kn-sub">ಮುಂದಿನ ಪ್ರಶ್ನೆ</span>
+          </button>
+          <button id="btn-quiz-exit" class="exit-btn">
+            <span>Unlock &amp; Return</span>
+            <span class="kn-sub">ಹಿಂದಿರುಗಿ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fallback Warning if Offline / WebGL Unavailable -->
+  <div id="error-overlay" class="snap-banner hidden">
+    <div class="snap-banner-text" id="error-message"></div>
+  </div>
+
+  <!-- Three.js Core + OrbitControls (Global Classic Scripts so both file:// and http:// work seamlessly) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Application Modules -->
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/audio.js"></script>
+  <script defer src="js/textures.js"></script>
+  <script defer src="js/models.js"></script>
+  <script defer src="js/physics.js"></script>
+  <script defer src="js/graph.js"></script>
+  <script defer src="js/challenge.js"></script>
+  <script defer src="js/main.js"></script>
+</body>
+</html>
