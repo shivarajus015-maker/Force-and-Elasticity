@@ -4,33 +4,143 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Hooke's Law & Elasticity — 3D Virtual Physics Lab | ಹುಕ್‌ನ ನಿಯಮ</title>
-
-  <!-- Fonts: Orbitron (Sci-Fi HUD), Inter (UI), Noto Sans Kannada (Bilingual Kannada) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet" />
 
   <style>
-    /* =========================================================================
-       DESKTOP / MOBILE MODE + HIDE ALL TEXT + FLOATING PREV/NEXT/BACK CONTROLS
-       ========================================================================= */
-    .mode-switch-wrap {
+    :root {
+      --bg-dark: #070d19;
+      --glass-bg: rgba(13, 22, 38, 0.88);
+      --glass-border: rgba(56, 189, 248, 0.28);
+      --cyan: #38bdf8;
+      --purple: #a78bfa;
+      --amber: #fbbf24;
+      --emerald: #34d399;
+      --rose: #fb7185;
+      --text-main: #f8fafc;
+      --text-sub: #cbd5e1;
+      --top-h: 64px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: 'Inter', 'Noto Sans Kannada', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+    }
+
+    /* Main 3D WebGL Canvas */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      touch-action: none;
+      background: radial-gradient(circle at 50% 35%, #162847 0%, #070d19 100%);
+    }
+
+    #canvas-container canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      touch-action: none;
+    }
+
+    /* Top Header Bar */
+    .hud-header {
+      position: fixed;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      min-height: 54px;
+      z-index: 20;
+      background: var(--glass-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .brand-kicker {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--cyan);
+    }
+
+    .brand-title {
+      font-family: 'Orbitron', 'Noto Sans Kannada', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-title .kn-inline {
+      font-family: 'Noto Sans Kannada', sans-serif;
+      font-size: 0.82rem;
+      color: #fde68a;
+      margin-left: 6px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .camera-presets, .mode-switch-wrap {
       display: flex;
       background: rgba(2, 6, 23, 0.72);
-      border: 1px solid rgba(56, 189, 248, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 10px;
       padding: 2px;
       gap: 2px;
     }
 
-    .mode-switch-btn {
+    .pill-btn, .mode-switch-btn {
       padding: 4px 8px;
       border-radius: 8px;
       border: none;
       background: transparent;
-      color: #cbd5e1;
+      color: var(--text-sub);
       font-family: inherit;
       font-size: 0.68rem;
       font-weight: 700;
@@ -39,25 +149,23 @@
       flex-direction: column;
       align-items: center;
       line-height: 1.15;
-      transition: all 0.2s ease;
     }
 
-    .mode-switch-btn .kn {
+    .pill-btn .kn, .mode-switch-btn .kn {
       font-size: 0.58rem;
       font-weight: 600;
     }
 
-    .mode-switch-btn.active {
+    .pill-btn.active, .mode-switch-btn.active {
       background: linear-gradient(135deg, #0284c7, #2563eb);
       color: #ffffff;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
     }
 
     .btn-hide-all {
       padding: 5px 10px;
       border-radius: 10px;
       border: 1px solid rgba(251, 191, 36, 0.55);
-      background: rgba(120, 53, 15, 0.45);
+      background: rgba(120, 53, 15, 0.55);
       color: #fef3c7;
       font-family: inherit;
       font-size: 0.69rem;
@@ -68,7 +176,6 @@
       align-items: center;
       line-height: 1.15;
       white-space: nowrap;
-      transition: all 0.2s ease;
     }
 
     .btn-hide-all .kn {
@@ -76,7 +183,459 @@
       color: #fde68a;
     }
 
-    /* Floating Prev / Next / Back Bar (Visible when All Text is Hidden) */
+    .icon-pill-btn {
+      padding: 6px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(30, 41, 59, 0.85);
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .icon-pill-btn.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* Snap Alert Banner */
+    .snap-banner {
+      position: fixed;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      background: rgba(127, 29, 29, 0.94);
+      border: 1px solid #fb7185;
+      border-radius: 14px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 12px 35px rgba(225, 29, 72, 0.45);
+      max-width: 94vw;
+    }
+
+    .snap-banner.hidden { display: none !important; }
+
+    .snap-banner-text strong {
+      display: block;
+      font-size: 0.82rem;
+      color: #fecdd3;
+    }
+
+    .snap-banner-text .kn-block {
+      font-size: 0.76rem;
+      color: #fde68a;
+    }
+
+    .repair-btn {
+      background: #fbbf24;
+      color: #0f172a;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.75rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Left & Right HUD Panels (Desktop Mode) */
+    .hud-panel {
+      position: fixed;
+      top: 78px;
+      bottom: 14px;
+      width: 315px;
+      z-index: 15;
+      background: var(--glass-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    }
+
+    .hud-left { left: 12px; }
+    .hud-right { right: 12px; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 6px;
+    }
+
+    .panel-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: var(--cyan);
+    }
+
+    .panel-subtitle-kn {
+      font-size: 0.68rem;
+      color: var(--text-sub);
+    }
+
+    .status-badge {
+      font-size: 0.64rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(52, 211, 153, 0.5);
+      color: #a7f3d0;
+    }
+
+    .status-badge.snapped {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: #fb7185;
+      color: #fecdd3;
+    }
+
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric-card {
+      background: rgba(2, 6, 23, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 11px;
+      padding: 8px 10px;
+    }
+
+    .metric-wide {
+      grid-column: span 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .metric-label span {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--text-sub);
+    }
+
+    .metric-label .kn-label {
+      font-size: 0.63rem;
+      color: #93c5fd;
+    }
+
+    .metric-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .metric-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .glow-cyan { color: var(--cyan); }
+
+    .metric-unit {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+    }
+
+    .metric-sub {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    .clip-meter {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 3px;
+      margin-top: 6px;
+    }
+
+    .meter-seg {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .meter-seg.filled { background: var(--cyan); }
+    .meter-seg.seg-danger.filled { background: var(--rose); }
+
+    /* Graph Section */
+    .graph-section {
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 8px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 185px;
+    }
+
+    .graph-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      color: #e0f2fe;
+    }
+
+    .graph-3d-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 145px;
+      margin-top: 6px;
+    }
+
+    #graph-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Controls */
+    .hero-cta-btn {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(125, 211, 252, 0.5);
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+    }
+
+    .hero-cta-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .cta-icon { font-size: 1.4rem; }
+    .cta-main { display: block; font-size: 0.85rem; font-weight: 800; }
+    .cta-sub { display: block; font-size: 0.67rem; color: #dbeafe; margin-top: 2px; }
+
+    .secondary-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .sec-btn {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(30, 41, 59, 0.85);
+      color: #f8fafc;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.2;
+    }
+
+    .sec-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sec-main { font-size: 0.76rem; font-weight: 700; }
+    .sec-kn { font-size: 0.64rem; color: #93c5fd; }
+
+    .physics-card {
+      background: rgba(2, 6, 23, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 11px;
+      padding: 10px;
+    }
+
+    .physics-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .formula-pill {
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--cyan);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .limit-pill {
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--amber);
+      font-size: 0.66rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .physics-note {
+      font-size: 0.71rem;
+      line-height: 1.45;
+      color: #cbd5e1;
+    }
+
+    .kn-note {
+      margin-top: 5px;
+      color: #fde68a;
+    }
+
+    .toggles-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toggle-chip {
+      background: rgba(2, 6, 23, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 7px 9px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .orbit-hint {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 12;
+      background: rgba(13, 22, 38, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.68rem;
+      color: #cbd5e1;
+      white-space: nowrap;
+    }
+
+    /* =========================================================================
+       MOBILE MODE LAYOUT (GUARANTEES 3D SCENE IS ALWAYS VISIBLE ON PHONES)
+       ========================================================================= */
+    body.mobile-mode .brand-block,
+    body.mobile-mode .orbit-hint {
+      display: none !important;
+    }
+
+    body.mobile-mode .hud-header {
+      top: 0;
+      left: 0;
+      right: 0;
+      border-radius: 0;
+      padding: 5px 6px;
+      min-height: 48px;
+    }
+
+    body.mobile-mode .header-actions {
+      width: 100%;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    body.mobile-mode .camera-presets {
+      display: none;
+    }
+
+    body.mobile-mode #canvas-container {
+      top: 48px !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: auto !important;
+      height: 55dvh !important;
+    }
+
+    body.mobile-mode #right-panel {
+      top: calc(48px + 55dvh) !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      border-radius: 14px 14px 0 0 !important;
+      padding: 10px 12px 20px !important;
+    }
+
+    body.mobile-mode #left-panel {
+      top: calc(48px + 55dvh) !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      border-radius: 14px 14px 0 0 !important;
+      display: none;
+    }
+
+    body.mobile-mode.show-mobile-data #left-panel {
+      display: flex !important;
+      z-index: 18;
+    }
+
+    /* =========================================================================
+       HIDE ALL TEXT MODE + FLOATING PREV / NEXT / BACK CONTROL BAR
+       ========================================================================= */
+    body.hide-all-text #canvas-container {
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      height: 100dvh !important;
+    }
+
+    body.hide-all-text .brand-block,
+    body.hide-all-text .camera-presets,
+    body.hide-all-text #btn-sound,
+    body.hide-all-text #btn-toggle-data,
+    body.hide-all-text #left-panel,
+    body.hide-all-text #right-panel,
+    body.hide-all-text .orbit-hint {
+      display: none !important;
+    }
+
+    body.hide-all-text .hud-header {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      pointer-events: none;
+      justify-content: flex-end;
+    }
+
+    body.hide-all-text .header-actions {
+      width: auto;
+      pointer-events: auto;
+      background: rgba(13, 22, 38, 0.85);
+      padding: 4px 7px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
     #hidden-text-controls {
       position: fixed;
       bottom: 18px;
@@ -86,7 +645,7 @@
       display: none;
       align-items: center;
       gap: 8px;
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(13, 22, 38, 0.92);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(56, 189, 248, 0.5);
@@ -105,17 +664,12 @@
       background: rgba(30, 41, 59, 0.95);
       color: #f8fafc;
       font-family: inherit;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       font-weight: 700;
-      padding: 8px 13px;
+      padding: 8px 12px;
       border-radius: 999px;
       cursor: pointer;
       white-space: nowrap;
-      transition: transform 0.15s ease;
-    }
-
-    .nav-pill-btn:active {
-      transform: scale(0.96);
     }
 
     .nav-pill-btn.primary {
@@ -133,129 +687,21 @@
       font-family: 'Orbitron', sans-serif;
       font-size: 0.74rem;
       font-weight: 700;
-      color: #38bdf8;
-      padding: 0 6px;
+      color: var(--cyan);
+      padding: 0 5px;
       white-space: nowrap;
-    }
-
-    /* Hide All Text State */
-    body.hide-all-text .brand-block,
-    body.hide-all-text .camera-presets,
-    body.hide-all-text #btn-sound,
-    body.hide-all-text #btn-toggle-hud,
-    body.hide-all-text #left-panel,
-    body.hide-all-text #right-panel,
-    body.hide-all-text .orbit-hint {
-      display: none !important;
-    }
-
-    body.hide-all-text .hud-header {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      backdrop-filter: none !important;
-      pointer-events: none;
-      justify-content: flex-end;
-    }
-
-    body.hide-all-text .header-actions {
-      pointer-events: auto;
-      background: rgba(15, 23, 42, 0.84);
-      padding: 4px 7px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-    }
-
-    body.hide-all-text #canvas-container {
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      height: 100dvh !important;
-    }
-
-    /* Mobile Mode Layout (Ensures 3D Lab + Controls work smoothly on Phones) */
-    body.mobile-mode .brand-kicker,
-    body.mobile-mode .orbit-hint {
-      display: none !important;
-    }
-
-    body.mobile-mode .hud-header {
-      padding: 6px 8px;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    body.mobile-mode .brand-title {
-      font-size: 0.85rem;
-    }
-
-    body.mobile-mode .header-actions {
-      width: 100%;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-
-    body.mobile-mode #canvas-container {
-      position: fixed !important;
-      top: 86px !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: auto !important;
-      height: 52dvh !important;
-      z-index: 1;
-    }
-
-    body.mobile-mode #right-panel {
-      position: fixed !important;
-      top: calc(86px + 52dvh) !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: auto !important;
-      overflow-y: auto !important;
-      border-radius: 16px 16px 0 0 !important;
-      z-index: 12;
-      padding: 10px 12px 24px !important;
-    }
-
-    body.mobile-mode #left-panel {
-      position: fixed !important;
-      top: calc(86px + 52dvh) !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: auto !important;
-      overflow-y: auto !important;
-      z-index: 13;
-      display: none;
-    }
-
-    body.mobile-mode.show-mobile-telemetry #left-panel {
-      display: flex !important;
     }
   </style>
 </head>
 <body>
-  <!-- Main 3D WebGL Laboratory Canvas -->
+  <!-- 3D WebGL Scene Container -->
   <div id="canvas-container" aria-label="3D Physics Laboratory Scene"></div>
 
-  <!-- Vignette & Subtle Scanline Atmospheric Overlay -->
-  <div class="hud-atmosphere" aria-hidden="true"></div>
-
-  <!-- Top Observatory Header Bar -->
-  <header class="hud-header glass-panel">
+  <!-- Top Header Bar -->
+  <header class="hud-header">
     <div class="brand-block">
-      <div class="brand-beacon">
-        <span class="beacon-ring"></span>
-        <span class="beacon-core"></span>
-      </div>
-      <div class="brand-text">
+      <div class="brand-dot"></div>
+      <div>
         <div class="brand-kicker">8TH GRADE PHYSICS LAB • ೮ನೇ ತರಗತಿ ಭೌತಶಾಸ್ತ್ರ ಪ್ರಯೋಗಾಲಯ</div>
         <h1 class="brand-title">
           Elasticity &amp; Hooke's Law
@@ -265,89 +711,72 @@
     </div>
 
     <div class="header-actions">
-      <div class="camera-presets" role="group" aria-label="Camera Presets">
-        <button class="pill-btn active" data-cam="overview" title="Lab Overview">
-          <span class="en">Overview</span>
+      <div class="camera-presets">
+        <button class="pill-btn active" data-cam="overview">
+          <span>Overview</span>
           <span class="kn">ಸಂಪೂರ್ಣ ನೋಟ</span>
         </button>
-        <button class="pill-btn" data-cam="ruler" title="Focus on Rubber Band & Ruler">
-          <span class="en">Scale Focus</span>
+        <button class="pill-btn" data-cam="ruler">
+          <span>Scale Focus</span>
           <span class="kn">ಸ್ಕೇಲ್ ನೋಟ</span>
         </button>
-        <button class="pill-btn" data-cam="cup" title="Inspect Cup & Paperclips">
-          <span class="en">Cup View</span>
+        <button class="pill-btn" data-cam="cup">
+          <span>Cup View</span>
           <span class="kn">ಕಪ್ ನೋಟ</span>
         </button>
       </div>
 
       <!-- Desktop / Mobile Mode Switcher -->
-      <div class="mode-switch-wrap" role="group" aria-label="Device Mode">
-        <button class="mode-switch-btn active" id="btn-mode-desktop" title="Desktop Mode">
+      <div class="mode-switch-wrap">
+        <button class="mode-switch-btn active" id="btn-mode-desktop">
           <span>🖥️ Desktop</span>
           <span class="kn">ಡೆಸ್ಕ್‌ಟಾಪ್</span>
         </button>
-        <button class="mode-switch-btn" id="btn-mode-mobile" title="Mobile Mode">
+        <button class="mode-switch-btn" id="btn-mode-mobile">
           <span>📱 Mobile</span>
           <span class="kn">ಮೊಬೈಲ್</span>
         </button>
       </div>
 
-      <!-- Hide All Text Button -->
-      <button id="btn-hide-text" class="btn-hide-all" title="Hide All Text">
+      <!-- Hide All Text Toggle -->
+      <button id="btn-hide-text" class="btn-hide-all">
         <span id="hide-text-en">👁️ Hide Text</span>
         <span class="kn" id="hide-text-kn">ಪಠ್ಯ ಮರೆಮಾಡಿ</span>
       </button>
 
-      <button id="btn-sound" class="icon-pill-btn active" title="Toggle Sound Effects / ಶಬ್ದ">
-        <svg viewBox="0 0 24 24" class="icon-svg" aria-hidden="true">
-          <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/>
-          <path id="sound-wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path id="sound-wave-2" d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span class="en">SFX</span>
-      </button>
-
-      <button id="btn-toggle-hud" class="icon-pill-btn mobile-only" title="Toggle Telemetry / Graph">
-        <span>📊 Data</span>
-      </button>
+      <button id="btn-sound" class="icon-pill-btn active" title="Toggle Sound">🔊 SFX</button>
+      <button id="btn-toggle-data" class="icon-pill-btn" title="Toggle Data / Graph">📊 Data</button>
     </div>
   </header>
 
-  <!-- Floating Control Bar (Appears when All Text is Hidden: Previous, Next, Back) -->
+  <!-- Floating Control Bar When All Text Is Hidden -->
   <div id="hidden-text-controls">
-    <button class="nav-pill-btn" id="btn-float-prev" title="Previous / Remove Clip">⬅️ ಹಿಂದೆ • Prev</button>
+    <button class="nav-pill-btn" id="btn-float-prev">⬅️ ಹಿಂದೆ • Prev</button>
     <span class="nav-step-indicator" id="float-clip-count">0 / 8</span>
-    <button class="nav-pill-btn primary" id="btn-float-next" title="Next / Add Clip">ಮುಂದೆ • Next ➡️</button>
-    <button class="nav-pill-btn back-show" id="btn-float-back" title="Show All Text">↩️ ಹಿಂತಿರುಗಿ • Back</button>
+    <button class="nav-pill-btn primary" id="btn-float-next">ಮುಂದೆ • Next ➡️</button>
+    <button class="nav-pill-btn back-show" id="btn-float-back">↩️ ಹಿಂತಿರುಗಿ • Back</button>
   </div>
 
-  <!-- Elastic Limit Snap Alert Banner -->
+  <!-- Snap Warning Banner -->
   <div id="snap-banner" class="snap-banner hidden" role="alert">
-    <div class="snap-banner-icon">⚠</div>
+    <div style="font-size:1.3rem;">⚠️</div>
     <div class="snap-banner-text">
       <strong>ELASTIC LIMIT EXCEEDED — RUBBER BAND SNAPPED!</strong>
       <span class="kn-block">ಸ್ಥಿತಿಸ್ಥಾಪಕ ಮಿತಿ ಮೀರಿದೆ — ರಬ್ಬರ್ ಬ್ಯಾಂಡ್ ತುಂಡಾಗಿದೆ!</span>
     </div>
-    <button id="btn-banner-repair" class="repair-btn">
-      <span>Repair Band</span>
-      <span class="kn-sub">ಸರಿಪಡಿಸಿ</span>
-    </button>
+    <button id="btn-banner-repair" class="repair-btn">Repair • ಸರಿಪಡಿಸಿ</button>
   </div>
 
-  <!-- Left HUD Panel: Live Telemetry & Floating 3D Graph -->
-  <aside id="left-panel" class="hud-panel hud-left glass-panel">
+  <!-- Left HUD Panel: Live Telemetry & Graph -->
+  <aside id="left-panel" class="hud-panel hud-left">
     <div class="panel-header">
-      <div class="panel-title-wrap">
-        <span class="panel-dot"></span>
-        <div>
-          <h2 class="panel-title">LIVE TELEMETRY</h2>
-          <div class="panel-subtitle-kn">ನೇರ ಪ್ರಯೋಗ ದತ್ತಾಂಶ</div>
-        </div>
+      <div>
+        <h2 class="panel-title">LIVE TELEMETRY</h2>
+        <div class="panel-subtitle-kn">ನೇರ ಪ್ರಯೋಗ ದತ್ತಾಂಶ</div>
       </div>
-      <span id="status-badge" class="status-badge state-normal">LINEAR • ರೇಖೀಯ</span>
+      <span id="status-badge" class="status-badge">LINEAR • ರೇಖೀಯ</span>
     </div>
 
-    <!-- Primary Metrics Grid -->
     <div class="telemetry-grid">
       <div class="metric-card">
         <div class="metric-label">
@@ -355,219 +784,4 @@
           <span class="kn-label">ಪ್ರಸ್ತುತ ತೂಕ (g)</span>
         </div>
         <div class="metric-value-row">
-          <span id="val-weight" class="metric-value">0.0</span>
-          <span class="metric-unit">g</span>
-        </div>
-        <div class="metric-sub" id="val-force">Force (ಬಲ): 0.000 N</div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-label">
-          <span>Number of Paperclips</span>
-          <span class="kn-label">ಪೇಪರ್‌ಕ್ಲಿಪ್‌ಗಳ ಸಂಖ್ಯೆ</span>
-        </div>
-        <div class="metric-value-row">
-          <span id="val-clips" class="metric-value">0</span>
-          <span class="metric-unit">/ 8 max</span>
-        </div>
-        <div class="clip-meter" id="clip-meter" aria-label="Elastic capacity gauge">
-          <span class="meter-seg"></span><span class="meter-seg"></span>
-          <span class="meter-seg"></span><span class="meter-seg"></span>
-          <span class="meter-seg"></span><span class="meter-seg"></span>
-          <span class="meter-seg"></span><span class="meter-seg"></span>
-          <span class="meter-seg seg-danger" title="Elastic Limit Exceeded (>8)"></span>
-        </div>
-      </div>
-
-      <div class="metric-card metric-wide">
-        <div class="metric-wide-left">
-          <div class="metric-label">
-            <span>Rubber Band Extension (cm)</span>
-            <span class="kn-label">ರಬ್ಬರ್ ಬ್ಯಾಂಡ್ ಹಿಗ್ಗುವಿಕೆ (cm)</span>
-          </div>
-          <div class="metric-sub" id="val-law-ratio">Hooke's Law: F = k · Δx &nbsp;|&nbsp; k = 3.27 N/m</div>
-        </div>
-        <div class="metric-value-row">
-          <span id="val-extension" class="metric-value glow-cyan">0.00</span>
-          <span class="metric-unit">cm</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dynamic Floating 3D Line Graph Section -->
-    <div class="graph-section">
-      <div class="graph-header">
-        <div>
-          <h3 class="graph-title">3D FORCE vs. EXTENSION GRAPH</h3>
-          <div class="kn-label">ಬಲ (N) vs ಹಿಗ್ಗುವಿಕೆ (cm) — 3D ರೇಖಾ ನಕ್ಷೆ</div>
-        </div>
-        <div class="graph-legend">
-          <span class="legend-chip"><i class="dot-cyan"></i> Hooke Line</span>
-          <span class="legend-chip"><i class="dot-amber"></i> Limit (8)</span>
-        </div>
-      </div>
-
-      <div id="graph-3d-wrap" class="graph-3d-wrap">
-        <canvas id="graph-canvas"></canvas>
-        <div class="graph-axis-y">Force F (N) • ಬಲ</div>
-        <div class="graph-axis-x">Extension Δx (cm) • ಹಿಗ್ಗುವಿಕೆ</div>
-        <div id="graph-readout" class="graph-readout">Origin: (0.0 cm, 0.000 N)</div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Right HUD Panel: Interactive Controls & Challenge Mode -->
-  <aside id="right-panel" class="hud-panel hud-right glass-panel">
-    <div class="panel-header">
-      <div class="panel-title-wrap">
-        <span class="panel-dot dot-purple"></span>
-        <div>
-          <h2 class="panel-title">LAB CONTROLS</h2>
-          <div class="panel-subtitle-kn">ಪ್ರಯೋಗ ನಿಯಂತ್ರಣಗಳು</div>
-        </div>
-      </div>
-      <span id="lock-badge" class="lock-badge hidden">LOCKED 🔒</span>
-    </div>
-
-    <div id="controls-body" class="controls-body">
-      <!-- Primary Action: Add Paperclip -->
-      <button id="btn-add-clip" class="hero-cta-btn">
-        <span class="cta-glow"></span>
-        <span class="cta-content">
-          <span class="cta-icon">📎</span>
-          <span class="cta-labels">
-            <span class="cta-main">Add Paperclip (ಕ್ಲಿಪ್ ಸೇರಿಸಿ)</span>
-            <span class="cta-sub">+5.0 g mass • +0.049 N • +1.5 cm stretch</span>
-          </span>
-        </span>
-      </button>
-
-      <!-- Secondary Controls -->
-      <div class="secondary-actions">
-        <button id="btn-remove-clip" class="sec-btn" disabled>
-          <span class="sec-main">Remove Clip</span>
-          <span class="sec-kn">ಕ್ಲಿಪ್ ತೆಗೆಯಿರಿ</span>
-        </button>
-        <button id="btn-reset-lab" class="sec-btn sec-reset">
-          <span class="sec-main">Reset Lab</span>
-          <span class="sec-kn">ಮರುಹೊಂದಿಸಿ</span>
-        </button>
-      </div>
-
-      <!-- Physics Law Reference Card -->
-      <div class="physics-card">
-        <div class="physics-card-top">
-          <span class="formula-pill">F = k · Δx</span>
-          <span class="limit-pill">Limit: 8 Clips (40 g)</span>
-        </div>
-        <p class="physics-note">
-          Within the elastic limit, extension (Δx) increases linearly with load. Adding <strong>&gt; 8 clips</strong> exceeds the elastic limit and snaps the band!
-        </p>
-        <p class="physics-note kn-note">
-          ಸ್ಥಿತಿಸ್ಥಾಪಕ ಮಿತಿಯೊಳಗೆ ಹಿಗ್ಗುವಿಕೆಯು ತೂಕಕ್ಕೆ ನೇರ ಅನುಪಾತದಲ್ಲಿರುತ್ತದೆ. <strong>8 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಕ್ಲಿಪ್‌ಗಳನ್ನು</strong> ಹಾಕಿದರೆ ಬ್ಯಾಂಡ್ ತುಂಡಾಗುತ್ತದೆ!
-        </p>
-      </div>
-
-      <!-- Simulation Options -->
-      <div class="toggles-row">
-        <label class="toggle-chip">
-          <input type="checkbox" id="chk-slowmo" />
-          <span class="toggle-ui"></span>
-          <span class="toggle-text">
-            <span>Slow Motion</span>
-            <span class="kn-tiny">ನಿಧಾನ ಗತಿ</span>
-          </span>
-        </label>
-        <label class="toggle-chip">
-          <input type="checkbox" id="chk-laser" checked />
-          <span class="toggle-ui"></span>
-          <span class="toggle-text">
-            <span>Laser Guide</span>
-            <span class="kn-tiny">ಲೇಸರ್ ಮಾರ್ಗದರ್ಶಿ</span>
-          </span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Challenge Mode Launcher -->
-    <div class="challenge-launcher">
-      <button id="btn-challenge" class="challenge-btn">
-        <span class="chal-badge">QUIZ • ಪರೀಕ್ಷೆ</span>
-        <span class="chal-title">Challenge Mode (ಸವಾಲು ಮೋಡ್)</span>
-        <span class="chal-sub">Locks controls &amp; opens holographic physics quiz</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- Bottom Orbit Hint -->
-  <div class="orbit-hint glass-pill">
-    <span>🖱️ Drag to Orbit 360° • Scroll to Zoom • Right-Drag to Pan</span>
-    <span class="kn-hint">ತಿರುಗಿಸಲು ಎಳೆಯಿರಿ • ಜೂಮ್ ಮಾಡಲು ಸ್ಕ್ರಾಲ್ ಮಾಡಿ</span>
-  </div>
-
-  <!-- Holographic Challenge Mode Pop-Up Quiz Modal -->
-  <div id="challenge-modal" class="holo-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
-    <div class="holo-modal glass-panel">
-      <div class="holo-scanline" aria-hidden="true"></div>
-
-      <div class="modal-header">
-        <div>
-          <div class="modal-kicker">HOLOGRAPHIC PHYSICS CHALLENGE • ಭೌತಶಾಸ್ತ್ರ ಸವಾಲು</div>
-          <h2 id="quiz-title" class="modal-title">Hooke's Law Assessment</h2>
-        </div>
-        <div class="modal-meta">
-          <span id="quiz-progress" class="quiz-pill">Q 1 / 5</span>
-          <span id="quiz-score" class="quiz-pill score-pill">Score: 0</span>
-          <button id="btn-close-challenge" class="close-modal-btn" title="Unlock Controls & Exit">✕</button>
-        </div>
-      </div>
-
-      <div class="modal-body">
-        <div class="question-box">
-          <p id="quiz-q-en" class="q-en"></p>
-          <p id="quiz-q-kn" class="q-kn"></p>
-        </div>
-
-        <div id="quiz-options" class="quiz-options"></div>
-
-        <div id="quiz-feedback" class="quiz-feedback hidden">
-          <div id="quiz-fb-title" class="fb-title"></div>
-          <p id="quiz-fb-en" class="fb-en"></p>
-          <p id="quiz-fb-kn" class="fb-kn"></p>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <div class="locked-notice">
-          🔒 Lab controls are locked during Challenge Mode • ಪ್ರಯೋಗ ನಿಯಂತ್ರಣಗಳು ಲಾಕ್ ಆಗಿವೆ
-        </div>
-        <div class="modal-nav-btns">
-          <button id="btn-quiz-next" class="next-btn hidden">
-            <span>Next Question</span>
-            <span class="kn-sub">ಮುಂದಿನ ಪ್ರಶ್ನೆ</span>
-          </button>
-          <button id="btn-quiz-exit" class="exit-btn">
-            <span>Unlock &amp; Return</span>
-            <span class="kn-sub">ಹಿಂದಿರುಗಿ</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fallback Warning if Offline / WebGL Unavailable -->
-  <div id="error-overlay" class="snap-banner hidden">
-    <div class="snap-banner-text" id="error-message"></div>
-  </div>
-
-  <!-- Three.js Core + OrbitControls -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
-
-  <!-- Application Modules -->
-  <script defer src="js/i18n.js"></script>
-  <script defer src="js/audio.js"></script>
-  <script defer src="js/textures.js"></script>
-  <script defer src="js/models.js"></script>
-  <script defer src="js/physics.js"></script>
-  <script defer src="js/gr
+          <span id="val-wei
