@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Hooke's Law & Elasticity — 3D Virtual Physics Lab | ಹುಕ್‌ನ ನಿಯಮ</title>
 
   <!-- Fonts: Orbitron (Sci-Fi HUD), Inter (UI), Noto Sans Kannada (Bilingual Kannada) -->
@@ -11,6 +11,235 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* =========================================================================
+       DESKTOP / MOBILE MODE + HIDE ALL TEXT + FLOATING PREV/NEXT/BACK CONTROLS
+       ========================================================================= */
+    .mode-switch-wrap {
+      display: flex;
+      background: rgba(2, 6, 23, 0.72);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .mode-switch-btn {
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.15;
+      transition: all 0.2s ease;
+    }
+
+    .mode-switch-btn .kn {
+      font-size: 0.58rem;
+      font-weight: 600;
+    }
+
+    .mode-switch-btn.active {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
+    }
+
+    .btn-hide-all {
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(251, 191, 36, 0.55);
+      background: rgba(120, 53, 15, 0.45);
+      color: #fef3c7;
+      font-family: inherit;
+      font-size: 0.69rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.15;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-hide-all .kn {
+      font-size: 0.58rem;
+      color: #fde68a;
+    }
+
+    /* Floating Prev / Next / Back Bar (Visible when All Text is Hidden) */
+    #hidden-text-controls {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+      padding: 7px 12px;
+      border-radius: 999px;
+      max-width: 96vw;
+    }
+
+    body.hide-all-text #hidden-text-controls {
+      display: flex;
+    }
+
+    .nav-pill-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(30, 41, 59, 0.95);
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 8px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.15s ease;
+    }
+
+    .nav-pill-btn:active {
+      transform: scale(0.96);
+    }
+
+    .nav-pill-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border-color: rgba(125, 211, 252, 0.65);
+    }
+
+    .nav-pill-btn.back-show {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #0f172a;
+      border-color: #fde68a;
+    }
+
+    .nav-step-indicator {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #38bdf8;
+      padding: 0 6px;
+      white-space: nowrap;
+    }
+
+    /* Hide All Text State */
+    body.hide-all-text .brand-block,
+    body.hide-all-text .camera-presets,
+    body.hide-all-text #btn-sound,
+    body.hide-all-text #btn-toggle-hud,
+    body.hide-all-text #left-panel,
+    body.hide-all-text #right-panel,
+    body.hide-all-text .orbit-hint {
+      display: none !important;
+    }
+
+    body.hide-all-text .hud-header {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      pointer-events: none;
+      justify-content: flex-end;
+    }
+
+    body.hide-all-text .header-actions {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.84);
+      padding: 4px 7px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    body.hide-all-text #canvas-container {
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      height: 100dvh !important;
+    }
+
+    /* Mobile Mode Layout (Ensures 3D Lab + Controls work smoothly on Phones) */
+    body.mobile-mode .brand-kicker,
+    body.mobile-mode .orbit-hint {
+      display: none !important;
+    }
+
+    body.mobile-mode .hud-header {
+      padding: 6px 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    body.mobile-mode .brand-title {
+      font-size: 0.85rem;
+    }
+
+    body.mobile-mode .header-actions {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    body.mobile-mode #canvas-container {
+      position: fixed !important;
+      top: 86px !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: auto !important;
+      height: 52dvh !important;
+      z-index: 1;
+    }
+
+    body.mobile-mode #right-panel {
+      position: fixed !important;
+      top: calc(86px + 52dvh) !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      overflow-y: auto !important;
+      border-radius: 16px 16px 0 0 !important;
+      z-index: 12;
+      padding: 10px 12px 24px !important;
+    }
+
+    body.mobile-mode #left-panel {
+      position: fixed !important;
+      top: calc(86px + 52dvh) !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      overflow-y: auto !important;
+      z-index: 13;
+      display: none;
+    }
+
+    body.mobile-mode.show-mobile-telemetry #left-panel {
+      display: flex !important;
+    }
+  </style>
 </head>
 <body>
   <!-- Main 3D WebGL Laboratory Canvas -->
@@ -51,6 +280,24 @@
         </button>
       </div>
 
+      <!-- Desktop / Mobile Mode Switcher -->
+      <div class="mode-switch-wrap" role="group" aria-label="Device Mode">
+        <button class="mode-switch-btn active" id="btn-mode-desktop" title="Desktop Mode">
+          <span>🖥️ Desktop</span>
+          <span class="kn">ಡೆಸ್ಕ್‌ಟಾಪ್</span>
+        </button>
+        <button class="mode-switch-btn" id="btn-mode-mobile" title="Mobile Mode">
+          <span>📱 Mobile</span>
+          <span class="kn">ಮೊಬೈಲ್</span>
+        </button>
+      </div>
+
+      <!-- Hide All Text Button -->
+      <button id="btn-hide-text" class="btn-hide-all" title="Hide All Text">
+        <span id="hide-text-en">👁️ Hide Text</span>
+        <span class="kn" id="hide-text-kn">ಪಠ್ಯ ಮರೆಮಾಡಿ</span>
+      </button>
+
       <button id="btn-sound" class="icon-pill-btn active" title="Toggle Sound Effects / ಶಬ್ದ">
         <svg viewBox="0 0 24 24" class="icon-svg" aria-hidden="true">
           <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/>
@@ -60,11 +307,19 @@
         <span class="en">SFX</span>
       </button>
 
-      <button id="btn-toggle-hud" class="icon-pill-btn mobile-only" title="Toggle HUD Panels">
-        <span>HUD</span>
+      <button id="btn-toggle-hud" class="icon-pill-btn mobile-only" title="Toggle Telemetry / Graph">
+        <span>📊 Data</span>
       </button>
     </div>
   </header>
+
+  <!-- Floating Control Bar (Appears when All Text is Hidden: Previous, Next, Back) -->
+  <div id="hidden-text-controls">
+    <button class="nav-pill-btn" id="btn-float-prev" title="Previous / Remove Clip">⬅️ ಹಿಂದೆ • Prev</button>
+    <span class="nav-step-indicator" id="float-clip-count">0 / 8</span>
+    <button class="nav-pill-btn primary" id="btn-float-next" title="Next / Add Clip">ಮುಂದೆ • Next ➡️</button>
+    <button class="nav-pill-btn back-show" id="btn-float-back" title="Show All Text">↩️ ಹಿಂತಿರುಗಿ • Back</button>
+  </div>
 
   <!-- Elastic Limit Snap Alert Banner -->
   <div id="snap-banner" class="snap-banner hidden" role="alert">
@@ -116,7 +371,6 @@
           <span class="metric-unit">/ 8 max</span>
         </div>
         <div class="clip-meter" id="clip-meter" aria-label="Elastic capacity gauge">
-          <!-- 8 safe slots + 1 snap slot rendered cleanly -->
           <span class="meter-seg"></span><span class="meter-seg"></span>
           <span class="meter-seg"></span><span class="meter-seg"></span>
           <span class="meter-seg"></span><span class="meter-seg"></span>
@@ -155,7 +409,6 @@
 
       <div id="graph-3d-wrap" class="graph-3d-wrap">
         <canvas id="graph-canvas"></canvas>
-        <!-- Crisp Bilingual Holographic Axis Overlays -->
         <div class="graph-axis-y">Force F (N) • ಬಲ</div>
         <div class="graph-axis-x">Extension Δx (cm) • ಹಿಗ್ಗುವಿಕೆ</div>
         <div id="graph-readout" class="graph-readout">Origin: (0.0 cm, 0.000 N)</div>
@@ -307,7 +560,7 @@
     <div class="snap-banner-text" id="error-message"></div>
   </div>
 
-  <!-- Three.js Core + OrbitControls (Global Classic Scripts so both file:// and http:// work seamlessly) -->
+  <!-- Three.js Core + OrbitControls -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -317,8 +570,4 @@
   <script defer src="js/textures.js"></script>
   <script defer src="js/models.js"></script>
   <script defer src="js/physics.js"></script>
-  <script defer src="js/graph.js"></script>
-  <script defer src="js/challenge.js"></script>
-  <script defer src="js/main.js"></script>
-</body>
-</html>
+  <script defer src="js/gr
